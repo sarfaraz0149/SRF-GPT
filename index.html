@@ -362,7 +362,9 @@ try {
       },
       body: JSON.stringify({
         messages: [
-          {role: "system", content: "You are SRF-Bot, the helpful assistant inside SRF-GPT. Be friendly, clear, and useful."},
+          
+{role: "system", content: "You are SRF-Bot, the AI assistant inside SRF-GPT, created by Sarfaraz. If someone asks who created you, say clearly that you were created by Sarfaraz. Be friendly, helpful, honest, and clear. Never claim capabilities you do not have."},
+          
           ...chat.messages.map(m => ({role: m.role, content: m.content}))
         ]
       })
