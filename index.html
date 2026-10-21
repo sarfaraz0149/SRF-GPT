@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Universal AI Chat - Gemini Interface</title>
+  <title>SRF-GPT - AI Assistant</title>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -143,8 +143,12 @@
       <!-- Chat history items render dynamically here -->
     </div>
 
-    <!-- Sidebar Bottom / User Settings Button -->
-    <div class="p-3 border-t border-gemini-border">
+    <!-- Sidebar Bottom: Creator Attribution & Settings Button -->
+    <div class="p-3 border-t border-gemini-border space-y-2">
+      <div class="px-3 py-1.5 flex items-center gap-2 text-xs text-gemini-muted">
+        <i class="ph-fill ph-code text-gemini-accent text-sm"></i>
+        <span>Built by <strong class="text-gray-200 font-medium">Shaik Sarfaraz</strong></span>
+      </div>
       <button id="open-settings-btn" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gemini-hover text-sm text-gemini-muted hover:text-white transition">
         <i class="ph ph-gear text-lg"></i>
         <span>Settings & API Key</span>
@@ -161,7 +165,7 @@
           <i class="ph ph-sidebar-simple text-xl"></i>
         </button>
         <div class="flex items-center gap-2">
-          <span class="text-lg font-semibold bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">Gemini AI</span>
+          <span class="text-lg font-semibold bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">SRF-GPT</span>
           <span id="active-model-tag" class="text-xs px-2 py-0.5 rounded-full bg-gemini-surface border border-gemini-border text-gemini-muted"></span>
         </div>
       </div>
@@ -179,19 +183,19 @@
       </div>
     </div>
 
-    <!-- Chat Input Area (Gemini Style floating pill/bar) -->
+    <!-- Chat Input Area -->
     <div class="p-4 bg-gemini-bg shrink-0">
       <div class="max-w-3xl mx-auto relative">
         <div class="bg-gemini-surface border border-gemini-border rounded-2xl shadow-lg focus-within:border-gemini-accent/60 transition-all flex flex-col px-4 py-3">
           <textarea
             id="chat-input"
             rows="1"
-            placeholder="Ask anything..."
+            placeholder="Ask SRF-GPT anything..."
             class="w-full bg-transparent resize-none border-none outline-none text-gemini-text placeholder-gemini-muted text-sm leading-relaxed max-h-48 overflow-y-auto"
           ></textarea>
           <div class="flex items-center justify-between mt-2 pt-1 border-t border-gemini-border/40">
             <span class="text-[11px] text-gemini-muted flex items-center gap-1">
-              <i class="ph ph-info"></i> Powered by OpenRouter API
+              <i class="ph ph-user"></i> Created by Shaik Sarfaraz
             </span>
             <div class="flex items-center gap-2">
               <button id="send-btn" class="w-8 h-8 rounded-full bg-gemini-accent hover:opacity-90 flex items-center justify-center text-slate-900 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
@@ -201,7 +205,7 @@
           </div>
         </div>
         <p class="text-[11px] text-center text-gemini-muted mt-2">
-          Universal Gemini may display inaccurate info. Check critical information.
+          SRF-GPT may display inaccurate info. Check critical information.
         </p>
       </div>
     </div>
@@ -213,7 +217,7 @@
       <div class="flex items-center justify-between border-b border-gemini-border pb-3">
         <div class="flex items-center gap-2">
           <i class="ph ph-sliders text-xl text-gemini-accent"></i>
-          <h2 class="text-base font-semibold text-white">Interface Configuration</h2>
+          <h2 class="text-base font-semibold text-white">SRF-GPT Configuration</h2>
         </div>
         <button id="close-settings-btn" class="text-gemini-muted hover:text-white p-1 rounded-md transition">
           <i class="ph ph-x text-lg"></i>
@@ -257,11 +261,17 @@
 
   <!-- Scripts placed at the end of body to prevent blank page & blocking errors -->
   <script>
+    // System instruction asserting creator identity
+    const SYSTEM_PROMPT = {
+      role: 'system',
+      content: 'You are SRF-GPT, a powerful AI assistant created and developed by Shaik Sarfaraz. If the user asks who made you, who created you, or about your origins, always state clearly that you were created by Shaik Sarfaraz.'
+    };
+
     // --- Initial State and LocalStorage Keys ---
-    const STORAGE_KEY_SESSIONS = 'gemini_chat_sessions';
-    const STORAGE_KEY_ACTIVE_ID = 'gemini_active_chat_id';
-    const STORAGE_KEY_API_KEY = 'gemini_openrouter_api_key';
-    const STORAGE_KEY_MODEL = 'gemini_openrouter_model';
+    const STORAGE_KEY_SESSIONS = 'srfgpt_chat_sessions';
+    const STORAGE_KEY_ACTIVE_ID = 'srfgpt_active_chat_id';
+    const STORAGE_KEY_API_KEY = 'srfgpt_openrouter_api_key';
+    const STORAGE_KEY_MODEL = 'srfgpt_openrouter_model';
 
     const DEFAULT_MODEL = 'google/gemini-2.0-flash-exp:free';
 
@@ -324,14 +334,12 @@
     }
 
     function setupEventListeners() {
-      // Auto-grow textarea
       chatInput.addEventListener('input', function() {
         this.style.height = 'auto';
         this.style.height = (this.scrollHeight) + 'px';
         if (!this.value.trim()) this.style.height = 'auto';
       });
 
-      // Enter key submits (Shift+Enter for newline)
       chatInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
@@ -343,7 +351,6 @@
       newChatBtn.addEventListener('click', () => createNewSession());
       clearChatBtn.addEventListener('click', clearCurrentChat);
 
-      // Sidebar Toggles
       collapseSidebarBtn.addEventListener('click', () => {
         sidebar.classList.add('-ml-72');
         expandSidebarBtn.classList.remove('hidden');
@@ -353,7 +360,6 @@
         expandSidebarBtn.classList.add('hidden');
       });
 
-      // Settings Modal Open/Close
       openSettingsBtn.addEventListener('click', () => {
         inputApiKey.value = apiKey;
         inputModel.value = currentModel;
@@ -482,9 +488,9 @@
           </div>
           <div>
             <h1 class="text-2xl font-medium bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">
-              Hello there
+              Hello, I am SRF-GPT
             </h1>
-            <p class="text-sm text-gemini-muted mt-1">How can I help you today?</p>
+            <p class="text-sm text-gemini-muted mt-1">Created by <span class="text-slate-200 font-medium">Shaik Sarfaraz</span>. How can I help you today?</p>
           </div>
         </div>
       `;
@@ -497,13 +503,4 @@
 
       if (isUser) {
         wrapper.innerHTML = `
-          <div class="max-w-[85%] md:max-w-[75%] bg-gemini-userBubble text-gemini-text text-sm rounded-2xl rounded-tr-sm px-4 py-3 leading-relaxed border border-gemini-border/50">
-            ${escapeHTML(content).replace(/\n/g, '<br>')}
-          </div>
-        `;
-      } else {
-        wrapper.innerHTML = `
-          <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 shrink-0 flex items-center justify-center text-white text-xs mt-1">
-            <i class="ph-fill ph-sparkle"></i>
-          </div>
-          <div class="flex-1 overfl
+          <div class="max-w-[85%] md:max-w-[75%] b
