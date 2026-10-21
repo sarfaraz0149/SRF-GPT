@@ -1,180 +1,144 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#101014">
-<title>SRF-GPT | SRF-Bot</title>
+<title>SRF-GPT</title>
 <style>
-:root{color-scheme:dark;--bg:#101014;--panel:#17171e;--card:#202029;--border:#30303b;--text:#f4f4f7;--muted:#a0a0b1;--accent:#9475ff}
+:root{--bg:#101018;--panel:#191923;--card:#252532;--border:#383849;--text:#f5f5ff;--muted:#aaaabd;--accent:#9274ff}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Arial,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
 button,input,textarea{font:inherit}
 button{cursor:pointer;color:inherit}
-button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.app{display:flex;height:100dvh;min-height:450px;overflow:hidden}
-.sidebar{width:275px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);padding:16px;display:flex;flex-direction:column;gap:15px;z-index:5}
-.brand{font-size:22px;font-weight:800;letter-spacing:-.7px;padding:7px 3px}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent)}
+.app{height:100dvh;display:flex;overflow:hidden}
+.sidebar{width:260px;background:var(--panel);padding:16px;display:flex;flex-direction:column;gap:14px;border-right:1px solid var(--border);flex-shrink:0;z-index:5}
+.brand{font-size:23px;font-weight:bold;padding:8px 2px}
 .brand span{color:var(--accent)}
-.btn{border:1px solid var(--border);background:var(--card);border-radius:12px;padding:11px 13px;text-align:left}
-.btn:hover,.suggestion:hover{background:#292936}
-.new-btn{width:100%}
-.section-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-top:12px}
-.history{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:5px}
-.history-row{display:flex;gap:3px;align-items:center}
-.history-select{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:0;background:transparent;text-align:left;padding:10px;border-radius:9px;font-size:13px}
-.history-select.active,.history-select:hover{background:var(--card)}
-.delete{border:0;background:transparent;color:var(--muted);padding:8px;border-radius:8px}
-.delete:hover{color:#ff8080;background:var(--card)}
-.sidebar-bottom{border-top:1px solid var(--border);padding-top:12px}
+.btn{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:11px;text-align:left}
+.btn:hover{background:#333344}
+.full{width:100%}
+.history{flex:1;overflow-y:auto;min-height:30px}
+.history button{display:block;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:5px 0}
 .main{flex:1;min-width:0;display:flex;flex-direction:column}
-.topbar{height:60px;flex-shrink:0;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 18px;gap:12px}
-.top-left,.top-right{display:flex;align-items:center;gap:10px}
-.icon{width:39px;height:39px;border:1px solid var(--border);background:var(--panel);border-radius:11px}
-.icon:hover{background:var(--card)}
-.model-badge{font-size:11px;color:var(--muted);border:1px solid var(--border);border-radius:30px;padding:6px 10px;max-width:45vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.conversation{flex:1;min-height:0;overflow-y:auto;scroll-behavior:smooth}
-.welcome{max-width:760px;margin:auto;min-height:100%;padding:45px 22px 35px;display:flex;flex-direction:column;justify-content:center}
-.logo-icon{width:58px;height:58px;display:grid;place-items:center;border-radius:20px;background:linear-gradient(135deg,#9877ff,#5078ff);font-size:30px;margin-bottom:22px;box-shadow:0 8px 40px #785cff30}
-h1{font-size:clamp(28px,5vw,42px);letter-spacing:-1.5px;margin:0 0 10px}
-.subtitle{color:var(--muted);line-height:1.7;margin:0 0 25px;font-size:14px}
-.suggestions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
-.suggestion{border:1px solid var(--border);background:var(--panel);border-radius:15px;padding:17px;text-align:left;line-height:1.5}
-.suggestion strong{display:block;font-size:14px;margin:7px 0}
+.topbar{height:60px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 15px;gap:10px}
+.topbar button{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px}
+.model-badge{font-size:11px;color:var(--muted);max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.conversation{flex:1;overflow-y:auto;min-height:0}
+.welcome{max-width:720px;margin:auto;padding:50px 22px}
+.logo{font-size:38px;color:var(--accent)}
+h1{font-size:clamp(28px,5vw,42px);margin:12px 0}
+.muted{color:var(--muted);line-height:1.6}
+.suggestions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:25px}
+.suggestion{background:var(--panel);border:1px solid var(--border);padding:16px;border-radius:13px;text-align:left}
+.suggestion strong,.suggestion small{display:block;margin-top:8px}
 .suggestion small{color:var(--muted)}
-.messages{max-width:800px;margin:auto;padding:26px 22px 35px}
-.message{display:flex;gap:12px;margin-bottom:27px;align-items:flex-start}
-.avatar{width:35px;height:35px;flex-shrink:0;display:grid;place-items:center;border-radius:12px;background:#282438;color:#c5b5ff;font-weight:800}
-.message.user .avatar{background:#29364c;color:#b6d4ff}
-.msg-main{min-width:0;flex:1}
-.msg-name{font-size:12px;color:var(--muted);margin:2px 0 8px}
-.message-content{font-size:14px;line-height:1.8;overflow-wrap:anywhere;white-space:pre-wrap}
-.message-content pre{white-space:pre;overflow-x:auto;background:#0b0b10;padding:13px;border-radius:10px}
-.message-content code{font-family:monospace;font-size:.92em}
-.message-content a{color:#b7a4ff}
-.composer-wrap{padding:12px 18px 15px}
-.composer{max-width:800px;margin:auto;border:1px solid #393946;border-radius:17px;background:var(--panel);padding:9px}
-.composer:focus-within{border-color:#8068df}
-#prompt{display:block;width:100%;min-height:48px;max-height:160px;resize:none;border:0;outline:0;background:transparent;color:var(--text);padding:10px;font-size:14px}
-.composer-bottom{display:flex;justify-content:space-between;align-items:center;padding:4px 4px 2px 10px;gap:8px}
-.hint{font-size:11px;color:var(--muted)}
-.send{width:39px;height:39px;border:0;border-radius:12px;background:#eeeaff;color:#17131f;font-size:23px;font-weight:bold}
-.send:hover{background:white}
-.send:disabled{opacity:.4;cursor:not-allowed}
-.disclaimer{text-align:center;font-size:10px;color:#737383;margin:9px auto 0;max-width:800px}
-.overlay{position:fixed;inset:0;z-index:20;background:#000a;display:flex;align-items:center;justify-content:center;padding:17px}
+.messages{max-width:800px;margin:auto;padding:24px 20px}
+.message{margin:0 0 25px;line-height:1.8;overflow-wrap:anywhere}
+.message .who{font-size:12px;color:var(--muted);margin-bottom:5px}
+.message .content{white-space:pre-wrap}
+.composer-wrap{padding:12px 16px}
+.composer{max-width:800px;margin:auto;background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:10px}
+#prompt{width:100%;resize:none;max-height:150px;min-height:48px;background:transparent;color:var(--text);border:0;outline:0;padding:10px}
+.composer-bottom{display:flex;align-items:center;justify-content:space-between;padding:3px}
+#send{width:40px;height:40px;border:0;border-radius:12px;background:#e6dfff;color:#171322;font-size:23px}
+#send:disabled{opacity:.5}
+.disclaimer{text-align:center;color:#77778b;font-size:10px;margin:10px}
+.overlay{position:fixed;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;padding:15px;z-index:20}
 .hidden{display:none!important}
-.modal{width:100%;max-width:470px;background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:22px;box-shadow:0 20px 90px #0009;max-height:90dvh;overflow:auto}
-.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:20px}
-.modal h2{margin:0;font-size:21px}
-.modal p{font-size:12px;line-height:1.6;color:var(--muted)}
-.field{display:block;margin:17px 0}
-.field label{display:block;font-size:13px;margin-bottom:8px}
-.field input{width:100%;padding:12px;border:1px solid var(--border);border-radius:11px;background:var(--bg);color:white}
-.modal-actions{display:flex;gap:9px;justify-content:space-between;flex-wrap:wrap;margin-top:22px}
-.primary{background:#eeeaff;color:#17131f;border:0;border-radius:10px;padding:11px 15px;font-weight:700}
-.secondary{border:1px solid var(--border);background:var(--card);border-radius:10px;padding:10px 13px}
-.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:50;background:#292936;border:1px solid #444454;border-radius:12px;padding:12px 16px;font-size:13px;max-width:90vw;box-shadow:0 8px 30px #0007}
-.typing{color:var(--muted);font-size:13px}
-@media(max-width:700px){
-.sidebar{position:fixed;inset:0 auto 0 0;width:min(290px,85vw);transform:translateX(-105%);transition:transform .2s;box-shadow:10px 0 40px #0008}
+.modal{width:100%;max-width:450px;max-height:90dvh;overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:22px}
+.modal-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.modal h2{margin-top:0}
+.field{margin:18px 0}
+.field label{display:block;margin-bottom:8px;font-size:14px}
+.field input{width:100%;padding:12px;background:var(--bg);color:white;border:1px solid var(--border);border-radius:10px}
+.actions{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:20px}
+.primary{background:#e6dfff;color:#171322;border:0;border-radius:10px;padding:12px;font-weight:bold}
+.secondary{background:var(--card);border:1px solid var(--border);padding:11px;border-radius:10px}
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#333344;border:1px solid var(--border);border-radius:10px;padding:12px;z-index:30;max-width:90%;font-size:13px}
+@media(max-width:650px){
+.sidebar{position:fixed;inset:0 auto 0 0;width:min(280px,85vw);transform:translateX(-110%);transition:transform .2s;box-shadow:10px 0 30px #0008}
 .sidebar.open{transform:translateX(0)}
-.scrim{position:fixed;inset:0;background:#0009;z-index:4}
+.suggestions{grid-template-columns:1fr}
 .welcome{padding:35px 18px}
-.messages{padding:22px 15px}
-.composer-wrap{padding:10px 10px 12px}
-.topbar{padding:0 11px}
-.suggestions{gap:8px}
-.suggestion{padding:12px}
+.messages{padding:20px 15px}
+.composer-wrap{padding:10px}
 }
-@media(max-width:390px){.suggestions{grid-template-columns:1fr}.welcome{justify-content:flex-start;padding-top:35px}}
 </style>
 </head>
 <body>
 <div class="app">
-  <div id="scrim" class="scrim hidden"></div>
-  <aside id="sidebar" class="sidebar">
-    <div class="brand">✦ SRF-<span>GPT</span></div>
-    <button id="newChat" class="btn new-btn">＋ &nbsp; New chat</button>
-    <div class="section-label">Your conversations</div>
-    <div id="history" class="history"></div>
-    <div class="sidebar-bottom">
-      <button id="settingsSide" class="btn new-btn">⚙ &nbsp; Settings & API</button>
-      <p style="font-size:11px;color:var(--muted);line-height:1.6">Created by Shaik Sarfaraz</p>
-    </div>
-  </aside>
+<aside class="sidebar" id="sidebar">
+<div class="brand">✦ SRF-<span>GPT</span></div>
+<button class="btn full" id="newChat">＋ New chat</button>
+<p class="muted">CHAT HISTORY</p>
+<div class="history" id="history"></div>
+<button class="btn full" id="sideSettings">⚙ Settings</button>
+</aside>
 
-  <main class="main">
-    <header class="topbar">
-      <div class="top-left">
-        <button id="menu" class="icon" aria-label="Open menu">☰</button>
-        <span style="font-size:14px;font-weight:650">SRF-Bot</span>
-      </div>
-      <div class="top-right">
-        <span id="modelBadge" class="model-badge">Not configured</span>
-        <button id="settingsTop" class="icon" aria-label="Settings">⚙</button>
-      </div>
-    </header>
+<main class="main">
+<header class="topbar">
+<div style="display:flex;align-items:center;gap:12px">
+<button id="menu" aria-label="Open menu">☰</button>
+<strong>SRF-Bot</strong>
+</div>
+<div style="display:flex;align-items:center;gap:8px">
+<span id="modelBadge" class="model-badge">Not configured</span>
+<button id="topSettings" aria-label="Settings">⚙</button>
+</div>
+</header>
 
-    <section id="conversation" class="conversation">
-      <div id="welcome" class="welcome">
-        <div class="logo-icon">✦</div>
-        <h1>Hi, I am SRF-Bot!</h1>
-        <p class="subtitle">Your AI assistant, ready to help you learn, create, code and explore. What shall we do today?</p>
-        <div class="suggestions">
-          <button class="suggestion" data-prompt="Explain a difficult topic in simple words with an example.">✧ <strong>Explain something</strong><small>Make difficult topics easy</small></button>
-          <button class="suggestion" data-prompt="Help me brainstorm creative ideas for a project.">◈ <strong>Brainstorm ideas</strong><small>Think outside the box</small></button>
-          <button class="suggestion" data-prompt="Write a simple JavaScript project and explain how it works.">⌘ <strong>Write some code</strong><small>Build something cool</small></button>
-          <button class="suggestion" data-prompt="Help me create a practical study plan for this week.">▤ <strong>Plan my week</strong><small>Organize my goals</small></button>
-        </div>
-      </div>
-      <div id="messages" class="messages hidden"></div>
-    </section>
+<section class="conversation" id="conversation">
+<div class="welcome" id="welcome">
+<div class="logo">✦</div>
+<h1>Hi, I am SRF-Bot!</h1>
+<p class="muted">Your AI assistant. Ask questions, learn something new, or build something awesome.</p>
+<div class="suggestions">
+<button class="suggestion" data-prompt="Explain a difficult topic in simple words with an example.">✧ <strong>Explain something</strong><small>Make learning easier</small></button>
+<button class="suggestion" data-prompt="Give me creative ideas for a project.">◈ <strong>Brainstorm ideas</strong><small>Let's create something</small></button>
+<button class="suggestion" data-prompt="Write a simple JavaScript project and explain the code.">⌘ <strong>Write some code</strong><small>Build a cool project</small></button>
+<button class="suggestion" data-prompt="Help me create a practical study plan.">▤ <strong>Plan my studies</strong><small>Get organized</small></button>
+</div>
+</div>
+<div id="messages" class="messages hidden"></div>
+</section>
 
-    <footer class="composer-wrap">
-      <div class="composer">
-        <textarea id="prompt" rows="1" placeholder="Message SRF-Bot..." aria-label="Message SRF-Bot"></textarea>
-        <div class="composer-bottom">
-          <span id="hint" class="hint">Configure your API key to begin</span>
-          <button id="send" class="send" aria-label="Send message">↑</button>
-        </div>
-      </div>
-      <p class="disclaimer">AI can make mistakes. Your API key is stored in this browser. Do not use on shared devices.</p>
-    </footer>
-  </main>
+<footer class="composer-wrap">
+<div class="composer">
+<textarea id="prompt" rows="1" placeholder="Message SRF-Bot..." aria-label="Message SRF-Bot"></textarea>
+<div class="composer-bottom">
+<small id="status" class="muted">Set up your API key to chat</small>
+<button id="send" aria-label="Send message">↑</button>
+</div>
+</div>
+<p class="disclaimer">AI can make mistakes. Keep your API key private.</p>
+</footer>
+</main>
 </div>
 
-<div id="settingsOverlay" class="overlay hidden">
-  <section class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-    <div class="modal-head">
-      <div>
-        <h2 id="settingsTitle">Settings & API</h2>
-        <p>Connect SRF-Bot to an AI model using OpenRouter.</p>
-      </div>
-      <button id="closeSettings" class="icon" aria-label="Close settings">✕</button>
-    </div>
-    <form id="settingsForm">
-      <div class="field">
-        <label for="apiKey">OpenRouter API key</label>
-        <input id="apiKey" type="password" placeholder="sk-or-v1-..." autocomplete="off">
-      </div>
-      <div class="field">
-        <label for="model">Model ID</label>
-        <input id="model" type="text" placeholder="openai/gpt-4o-mini">
-        <p>Example: openai/gpt-4o-mini or google/gemini-2.5-flash. Availability depends on OpenRouter.</p>
-      </div>
-      <p>Your key is saved in this browser's local storage and sent to OpenRouter for requests. This static website has no private server to protect it.</p>
-      <div class="modal-actions">
-        <button type="button" id="clearKey" class="secondary">Clear key</button>
-        <div style="display:flex;gap:8px">
-          <button type="button" id="cancelSettings" class="secondary">Cancel</button>
-          <button type="submit" class="primary">Save settings</button>
-        </div>
-      </div>
-    </form>
-  </section>
+<div class="overlay hidden" id="settingsOverlay">
+<section class="modal" role="dialog" aria-modal="true">
+<div class="modal-head"><h2>Settings</h2><button class="secondary" id="closeSettings">✕</button></div>
+<p class="muted">Connect SRF-Bot to OpenRouter.</p>
+<form id="settingsForm">
+<div class="field">
+<label for="apiKey">OpenRouter API key</label>
+<input id="apiKey" type="password" placeholder="sk-or-v1-..." autocomplete="off">
+</div>
+<div class="field">
+<label for="model">Model ID</label>
+<input id="model" type="text" placeholder="openai/gpt-4o-mini">
+</div>
+<p class="muted">Example model: openai/gpt-4o-mini. Your key is stored in this browser and used for API requests.</p>
+<div class="actions">
+<button type="button" id="clearKey" class="secondary">Clear key</button>
+<div style="display:flex;gap:8px">
+<button type="button" id="cancelSettings" class="secondary">Cancel</button>
+<button type="submit" class="primary">Save settings</button>
+</div>
+</div>
+</form>
+</section>
 </div>
 <div id="toast" class="toast hidden" role="status"></div>
 
@@ -182,215 +146,180 @@ h1{font-size:clamp(28px,5vw,42px);letter-spacing:-1.5px;margin:0 0 10px}
 "use strict";
 
 const $ = id => document.getElementById(id);
-const KEY = "srfbot_api_key";
-const MODEL = "srfbot_model";
-const CHATS = "srfbot_chats";
-const ACTIVE = "srfbot_active";
 const DEFAULT_MODEL = "openai/gpt-4o-mini";
+const KEY_NAME = "srf_gpt_api_key";
+const MODEL_NAME = "srf_gpt_model";
+const HISTORY_NAME = "srf_gpt_history";
 
-let apiKey = "";
-let model = DEFAULT_MODEL;
-let chats = [];
-let activeId = null;
+let apiKey = read(KEY_NAME, "");
+let model = read(MODEL_NAME, DEFAULT_MODEL);
+let chats = parseChats();
+let activeId = chats[0]?.id || null;
 let busy = false;
 let controller = null;
-let toastTimer = null;
+let toastTimer;
 
 function read(key, fallback) {
-  try {
-    const v = localStorage.getItem(key);
-    return v === null ? fallback : v;
-  } catch (e) {
-    return fallback;
-  }
+  try { return localStorage.getItem(key) ?? fallback; }
+  catch { return fallback; }
 }
-function write(key, value) {
-  try {
-    localStorage.setItem(key, value);
-    return true;
-  } catch (e) {
-    notify("Browser storage unavailable. Check browser settings.");
-    return false;
-  }
+
+function save(key, value) {
+  try { localStorage.setItem(key, value); return true; }
+  catch { showToast("Browser storage is unavailable."); return false; }
 }
-function notify(message) {
+
+function parseChats() {
+  try {
+    const result = JSON.parse(read(HISTORY_NAME, "[]"));
+    return Array.isArray(result) ? result : [];
+  } catch { return []; }
+}
+
+function showToast(message) {
   $("toast").textContent = message;
   $("toast").classList.remove("hidden");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => $("toast").classList.add("hidden"), 3000);
+  toastTimer = setTimeout(() => $("toast").classList.add("hidden"), 2800);
 }
+
 function makeId() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
-function activeChat() {
-  return chats.find(c => c.id === activeId);
+
+function currentChat() {
+  return chats.find(chat => chat.id === activeId);
 }
+
 function saveChats() {
-  write(CHATS, JSON.stringify(chats));
-  if (activeId) write(ACTIVE, activeId);
-  else {
-    try { localStorage.removeItem(ACTIVE); } catch(e) {}
-  }
+  save(HISTORY_NAME, JSON.stringify(chats));
 }
-function closeSidebar() {
-  $("sidebar").classList.remove("open");
-  $("scrim").classList.add("hidden");
-}
-function toggleSidebar() {
-  $("sidebar").classList.toggle("open");
-  $("scrim").classList.toggle("hidden");
-}
+
 function openSettings() {
   $("apiKey").value = apiKey;
   $("model").value = model;
   $("settingsOverlay").classList.remove("hidden");
-  closeSidebar();
+  $("sidebar").classList.remove("open");
 }
+
 function closeSettings() {
   $("settingsOverlay").classList.add("hidden");
 }
+
 function newChat() {
-  const chat = {id: makeId(), title: "New chat", messages: [], updatedAt: Date.now()};
+  if (busy && controller) controller.abort();
+  busy = false;
+  controller = null;
+  updateStatus();
+  const chat = {id: makeId(), title: "New chat", messages: []};
   chats.unshift(chat);
   activeId = chat.id;
   saveChats();
   renderHistory();
-  renderConversation();
+  renderMessages();
   $("prompt").value = "";
   $("prompt").focus();
-  closeSidebar();
+  $("sidebar").classList.remove("open");
 }
-function selectChat(id) {
-  if (busy) {
-    notify("Wait until the current answer finishes.");
-    return;
-  }
-  activeId = id;
-  saveChats();
-  renderHistory();
-  renderConversation();
-  closeSidebar();
-}
-function deleteChat(id) {
-  if (busy && activeId === id) {
-    if (controller) controller.abort();
-    controller = null;
-    busy = false;
-    updateSend();
-  }
-  chats = chats.filter(c => c.id !== id);
-  if (activeId === id) activeId = chats[0]?.id || null;
-  saveChats();
-  renderHistory();
-  renderConversation();
-  notify("Conversation deleted.");
-}
+
 function renderHistory() {
-  const box = $("history");
-  box.replaceChildren();
+  const list = $("history");
+  list.replaceChildren();
+
   if (!chats.length) {
-    const empty = document.createElement("p");
-    empty.style.cssText = "font-size:12px;color:var(--muted);padding:8px";
-    empty.textContent = "Your chats will appear here.";
-    box.appendChild(empty);
+    const p = document.createElement("p");
+    p.className = "muted";
+    p.textContent = "No conversations yet.";
+    list.appendChild(p);
     return;
   }
+
   chats.forEach(chat => {
-    const row = document.createElement("div");
-    row.className = "history-row";
-    const select = document.createElement("button");
-    select.className = "history-select" + (chat.id === activeId ? " active" : "");
-    select.textContent = chat.title || "New chat";
-    select.title = chat.title || "New chat";
-    select.onclick = () => selectChat(chat.id);
+    const wrap = document.createElement("div");
+    const open = document.createElement("button");
+    open.className = "btn full";
+    open.textContent = chat.title || "New chat";
+    open.addEventListener("click", () => {
+      if (busy) return showToast("Wait for the current response to finish.");
+      activeId = chat.id;
+      renderHistory();
+      renderMessages();
+      $("sidebar").classList.remove("open");
+    });
+
     const del = document.createElement("button");
-    del.className = "delete";
-    del.textContent = "×";
-    del.title = "Delete chat";
-    del.setAttribute("aria-label", "Delete chat");
-    del.onclick = () => {
-      if (confirm("Delete this conversation?")) deleteChat(chat.id);
-    };
-    row.append(select, del);
-    box.appendChild(row);
+    del.className = "secondary";
+    del.textContent = "Delete";
+    del.style.marginTop = "3px";
+    del.addEventListener("click", () => {
+      if (!confirm("Delete this conversation?")) return;
+      if (busy && chat.id === activeId && controller) controller.abort();
+      chats = chats.filter(c => c.id !== chat.id);
+      if (activeId === chat.id) activeId = chats[0]?.id || null;
+      busy = false;
+      controller = null;
+      saveChats();
+      renderHistory();
+      renderMessages();
+      updateStatus();
+    });
+
+    wrap.append(open, del);
+    list.appendChild(wrap);
   });
 }
-function addMessage(role, content) {
-  const chat = activeChat();
-  if (!chat) return;
-  chat.messages.push({role, content});
-  chat.updatedAt = Date.now();
-  if (role === "user" && (chat.title === "New chat" || !chat.title)) {
-    chat.title = content.replace(/\s+/g, " ").slice(0, 32) || "New chat";
-  }
-  saveChats();
-  renderHistory();
-  renderConversation();
-}
-function renderConversation() {
-  const chat = activeChat();
-  const hasMessages = !!(chat && chat.messages.length);
+
+function renderMessages() {
+  const chat = currentChat();
+  const hasMessages = !!chat && chat.messages.length > 0;
   $("welcome").classList.toggle("hidden", hasMessages);
   $("messages").classList.toggle("hidden", !hasMessages);
-  const box = $("messages");
-  box.replaceChildren();
+  const list = $("messages");
+  list.replaceChildren();
+
   if (!hasMessages) return;
-  chat.messages.forEach(msg => {
-    const row = document.createElement("article");
-    row.className = "message " + msg.role;
-    const avatar = document.createElement("div");
-    avatar.className = "avatar";
-    avatar.textContent = msg.role === "user" ? "Y" : "✦";
-    const main = document.createElement("div");
-    main.className = "msg-main";
-    const name = document.createElement("div");
-    name.className = "msg-name";
-    name.textContent = msg.role === "user" ? "You" : "SRF-Bot";
+
+  chat.messages.forEach(message => {
+    const article = document.createElement("article");
+    article.className = "message";
+
+    const who = document.createElement("div");
+    who.className = "who";
+    who.textContent = message.role === "user" ? "You" : "SRF-Bot";
+
     const content = document.createElement("div");
-    content.className = "message-content";
-    content.textContent = msg.content;
-    main.append(name, content);
-    row.append(avatar, main);
-    box.appendChild(row);
+    content.className = "content";
+    content.textContent = message.content;
+
+    article.append(who, content);
+    list.appendChild(article);
   });
+
   $("conversation").scrollTop = $("conversation").scrollHeight;
 }
-function updateSend() {
-  $("send").textContent = busy ? "■" : "↑";
-  $("send").setAttribute("aria-label", busy ? "Stop response" : "Send message");
-  $("hint").textContent = busy ? "SRF-Bot is thinking..." :
-    (apiKey ? "Ready to chat" : "Configure your API key to begin");
-}
-function autoResize() {
-  const el = $("prompt");
-  el.style.height = "auto";
-  el.style.height = Math.min(el.scrollHeight, 160) + "px";
-}
-function escapeHTML(s) {
-  return String(s).replace(/[&<>"']/g, c => ({
-    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
-  })[c]);
-}
-function formatText(s) {
-  let t = escapeHTML(s);
-  t = t.replace(/```([\w-]*)\n?([\s\S]*?)```/g,
-    (_, lang, code) => "<pre><code>" + code.trimEnd() + "</code></pre>");
-  t = t.replace(/`([^`\n]+)`/g, "<code>$1</code>");
-  t = t.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-  t = t.replace(/\*([^*\n]+)\*/g, "<em>$1</em>");
-  t = t.replace(/\n/g, "<br>");
-  return t;
-}
-function renderLatestAssistant() {
-  const chat = activeChat();
+
+function addMessage(role, content) {
+  const chat = currentChat();
   if (!chat) return;
-  const messages = $("messages");
-  const last = chat.messages[chat.messages.length - 1];
-  if (!last || last.role !== "assistant") return;
-  const row = messages.lastElementChild;
-  if (!row) return;
-  const content = row.querySelector(".message-content");
-  if (content) content.innerHTML = formatText(last.content);
+  chat.messages.push({role, content});
+
+  if (role === "user" && chat.title === "New chat") {
+    chat.title = content.replace(/\s+/g, " ").slice(0,  thirtyTwo());
+  }
+
+  saveChats();
+  renderHistory();
+  renderMessages();
+}
+
+function thirtyTwo() { return 32; }
+
+function updateStatus() {
+  $("modelBadge").textContent = model;
+  $("status").textContent = busy ? "SRF-Bot is thinking..." :
+    (apiKey ? "Ready to chat" : "Set up your API key to chat");
+  $("send").textContent = busy ? "■" : "↑";
+  $("send").disabled = false;
 }
 
 async function sendMessage(text) {
@@ -398,32 +327,31 @@ async function sendMessage(text) {
     if (controller) controller.abort();
     return;
   }
+
   const prompt = (text ?? $("prompt").value).trim();
   if (!prompt) return;
+
   if (!apiKey) {
     openSettings();
-    notify("Add your OpenRouter API key first.");
+    showToast("Add your OpenRouter API key first.");
     return;
   }
-  if (!activeChat()) newChat();
+
+  if (!currentChat()) {
+    const chat = {id: makeId(), title: "New chat", messages: []};
+    chats.unshift(chat);
+    activeId = chat.id;
+  }
 
   $("prompt").value = "";
-  autoResize();
+  resizePrompt();
   addMessage("user", prompt);
+
+  const chatId = activeId;
+  const chat = currentChat();
   busy = true;
   controller = new AbortController();
-  updateSend();
-
-  const chatAtStart = activeId;
-  const chat = activeChat();
-  const pending = document.createElement("article");
-  pending.className = "message";
-  pending.id = "pending";
-  pending.innerHTML = '<div class="avatar">✦</div><div class="msg-main"><div class="msg-name">SRF-Bot</div><div class="message-content typing">Thinking…</div></div>';
-  $("messages").appendChild(pending);
-  $("welcome").classList.add("hidden");
-  $("messages").classList.remove("hidden");
-  $("conversation").scrollTop = $("conversation").scrollHeight;
+  updateStatus();
 
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -431,64 +359,131 @@ async function sendMessage(text) {
       headers: {
         "Authorization": "Bearer " + apiKey,
         "Content-Type": "application/json",
-        "HTTP-Referer": location.origin,
+        "HTTP-Referer": location.href,
         "X-Title": "SRF-GPT"
       },
       body: JSON.stringify({
-        model,
+        model: model,
         messages: [
-          {role:"system", content:"You are SRF-Bot, the helpful AI assistant inside SRF-GPT, created by Shaik Sarfaraz. On the first greeting, introduce yourself as SRF-Bot. Be friendly, clear, and helpful."},
-          ...chat.messages.map(m => ({role:m.role, content:m.content}))
+          {role: "system", content: "You are SRF-Bot, the helpful assistant inside SRF-GPT. Be friendly, clear, and useful."},
+          ...chat.messages.map(m => ({role: m.role, content: m.content}))
         ]
       }),
       signal: controller.signal
     });
+
     const data = await response.json();
+
     if (!response.ok) {
-      const message = data?.error?.message || ("HTTP " + response.status);
-      throw new Error(message);
+      throw new Error(data?.error?.message || "API error " + response.status);
     }
+
     const answer = data?.choices?.[0]?.message?.content;
-    if (!answer) throw new Error("The model returned an empty response.");
-    if (activeId === chatAtStart) {
-      $("pending")?.remove();
-      addMessage("assistant", answer);
-      renderLatestAssistant();
-    } else {
-      const original = chats.find(c => c.id === chatAtStart);
-      if (original) {
-        original.messages.push({role:"assistant", content:answer});
-        saveChats();
-        renderHistory();
-      }
-      $("pending")?.remove();
+    if (!answer) throw new Error("The AI returned an empty response.");
+
+    const originalChat = chats.find(c => c.id === chatId);
+    if (originalChat) {
+      originalChat.messages.push({role: "assistant", content: answer});
+      saveChats();
     }
-  } catch (err) {
-    $("pending")?.remove();
-    if (err.name === "Escape") {
-    closeSettings();
-    closeSidebar();
+
+    if (activeId === chatId) renderMessages();
+    renderHistory();
+
+  } catch (error) {
+    if (error.name === "AbortError") {
+      showToast("Response stopped.");
+    } else {
+      const explanation = "Request failed: " + (error.message || "Unknown error") +
+        "\n\nCheck your API key, model ID, internet connection, and OpenRouter credits.";
+      const originalChat = chats.find(c => c.id === chatId);
+      if (originalChat) {
+        originalChat.messages.push({role: "assistant", content: explanation});
+        saveChats();
+      }
+      if (activeId === chatId) renderMessages();
+      showToast("Couldn't get a response. Check the chat.");
+    }
+  } finally {
+    busy = false;
+    controller = null;
+    updateStatus();
+  }
+}
+
+function resizePrompt() {
+  const box = $("prompt");
+  box.style.height = "auto";
+  box.style.height = Math.min(box.scrollHeight, 140) + "px";
+}
+
+$("newChat").addEventListener("click", newChat);
+$("sideSettings").addEventListener("click", openSettings);
+$("topSettings").addEventListener("click", openSettings);
+$("closeSettings").addEventListener("click", closeSettings);
+$("cancelSettings").addEventListener("click", closeSettings);
+
+$("settingsOverlay").addEventListener("click", event => {
+  if (event.target === $("settingsOverlay")) closeSettings();
+});
+
+$("menu").addEventListener("click", () => {
+  $("sidebar").classList.toggle("open");
+});
+
+$("clearKey").addEventListener("click", () => {
+  apiKey = "";
+  save(KEY_NAME, "");
+  $("apiKey").value = "";
+  updateStatus();
+  showToast("API key cleared.");
+});
+
+$("settingsForm").addEventListener("submit", event => {
+  event.preventDefault();
+  const enteredKey = $("apiKey").value.trim();
+  const enteredModel = $("model").value.trim() || DEFAULT_MODEL;
+
+  if (!enteredKey) {
+    showToast("Please enter your API key.");
+    return;
+  }
+
+  apiKey = enteredKey;
+  model = enteredModel;
+  save(KEY_NAME, apiKey);
+  save(MODEL_NAME, model);
+  updateStatus();
+  closeSettings();
+  showToast("Settings saved!");
+});
+
+$("send").addEventListener("click", () => sendMessage());
+
+$("prompt").addEventListener("input", resizePrompt);
+
+$("prompt").addEventListener("keydown", event => {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    sendMessage();
   }
 });
 
-// Initialize safely.
-try {
-  apiKey = read(KEY, "");
-  model = read(MODEL, DEFAULT_MODEL) || DEFAULT_MODEL;
-  const stored = JSON.parse(read(CHATS, "[]"));
-  chats = Array.isArray(stored) ? stored.filter(c =>
-    c && typeof c.id === "string" && Array.isArray(c.messages)
-  ) : [];
-  activeId = read(ACTIVE, null);
-  if (!chats.some(c => c.id === activeId)) activeId = chats[0]?.id || null;
-} catch (e) {
-  chats = [];
-  activeId = null;
-}
-$("modelBadge").textContent = model;
+document.querySelectorAll("[data-prompt]").forEach(button => {
+  button.addEventListener("click", () => {
+    $("prompt").value = button.dataset.prompt;
+    resizePrompt();
+    sendMessage(button.dataset.prompt);
+  });
+});
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") closeSettings();
+});
+
 renderHistory();
-renderConversation();
-updateSend();
+renderMessages();
+updateStatus();
 </script>
 </body>
 </html>
