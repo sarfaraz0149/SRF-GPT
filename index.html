@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Universal AI Chat - Gemini Interface</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            gemini: {
+              bg: '#131314',
+              surface: '#1e1f20',
+              sidebar: '#1a1a1c',
+              hover: '#282a2c',
+              border: '#333537',
+              text: '#e3e3e3',
+              muted: '#8e918f',
+              accent: '#a8c7fa',
+              userBubble: '#2b2c2f'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <!-- Markdown Parser (Marked) & Syntax Highlighting (Highlight.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark-dimmed.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Markdown Styling */
+    .prose-custom {
+      color: #e3e3e3;
+      font-size: 0.965rem;
+      line-height: 1.7;
+      word-break: break-word;
+    }
+    .prose-custom p { margin-bottom: 0.85rem; }
+    .prose-custom p:last-child { margin-bottom: 0; }
+    .prose-custom h1, .prose-custom h2, .prose-custom h3 {
+      font-weight: 600;
+      color: #fff;
+      margin-top: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+    .prose-custom ul, .prose-custom ol {
+      margin-left: 1.4rem;
+      margin-bottom: 0.85rem;
+    }
+    .prose-custom ul { list-style-type: disc; }
+    .prose-custom ol { list-style-type: decimal; }
+    .prose-custom code:not(pre code) {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0.15rem 0.35rem;
+      border-radius: 0.25rem;
+      font-size: 0.875em;
+      color: #a8c7fa;
+    }
+    .prose-custom pre {
+      background: #0d0d0e !important;
+      border: 1px solid #2e2f33;
+      border-radius: 0.65rem;
+      padding: 1rem;
+      margin: 0.85rem 0;
+      overflow-x: auto;
+    }
+    .prose-custom pre code {
+      background: transparent !important;
+      padding: 0;
+      font-size: 0.85rem;
+    }
+    .prose-custom blockquote {
+      border-left: 3px solid #a8c7fa;
+      padding-left: 0.85rem;
+      color: #a0a0a0;
+      margin: 0.85rem 0;
+    }
+    .prose-custom a {
+      color: #a8c7fa;
+      text-decoration: underline;
+    }
+
+    /* Pulse cursor for streaming */
+    .streaming-cursor::after {
+      content: '▋';
+      display: inline-block;
+      vertical-align: baseline;
+      animation: blink 1s infinite;
+      color: #a8c7fa;
+      margin-left: 2px;
+    }
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+  </style>
+</head>
+<body class="bg-gemini-bg text-gemini-text h-full flex overflow-hidden font-sans antialiased selection:bg-[#384358] selection:text-white">
+
+  <!-- Left Sidebar (Collapsible History) -->
+  <aside id="sidebar" class="w-72 bg-gemini-sidebar border-r border-gemini-border flex flex-col transition-all duration-300 ease-in-out shrink-0 z-20">
+    <!-- Sidebar Header -->
+    <div class="p-4 flex items-center justify-between">
+      <button id="new-chat-btn" class="flex-1 flex items-center gap-3 px-3.5 py-2.5 bg-[#232427] hover:bg-gemini-hover border border-gemini-border rounded-full text-sm font-medium transition duration-200">
+        <i class="ph ph-plus text-base text-gemini-accent"></i>
+        <span>New chat</span>
+      </button>
+      <button id="collapse-sidebar-btn" class="ml-2 p-2 hover:bg-gemini-hover rounded-full text-gemini-muted hover:text-white transition" title="Collapse Menu">
+        <i class="ph ph-sidebar-simple text-xl"></i>
+      </button>
+    </div>
+
+    <!-- Conversations List -->
+    <div class="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gemini-muted">Recent</div>
+    <div id="chat-list" class="flex-1 overflow-y-auto px-2 space-y-1">
+      <!-- Chat history items render dynamically here -->
+    </div>
+
+    <!-- Sidebar Bottom / User Settings Button -->
+    <div class="p-3 border-t border-gemini-border">
+      <button id="open-settings-btn" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gemini-hover text-sm text-gemini-muted hover:text-white transition">
+        <i class="ph ph-gear text-lg"></i>
+        <span>Settings & API Key</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Chat Section -->
+  <main class="flex-1 flex flex-col h-full relative overflow-hidden bg-gemini-bg">
+    <!-- Top Navigation Bar -->
+    <header class="h-14 border-b border-gemini-border/60 flex items-center justify-between px-4 bg-gemini-bg/80 backdrop-blur z-10 shrink-0">
+      <div class="flex items-center gap-3">
+        <button id="expand-sidebar-btn" class="p-2 hover:bg-gemini-hover rounded-full text-gemini-muted hover:text-white hidden transition" title="Expand Menu">
+          <i class="ph ph-sidebar-simple text-xl"></i>
+        </button>
+        <div class="flex items-center gap-2">
+          <span class="text-lg font-semibold bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">Gemini AI</span>
+          <span id="active-model-tag" class="text-xs px-2 py-0.5 rounded-full bg-gemini-surface border border-gemini-border text-gemini-muted"></span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="clear-chat-btn" class="p-2 hover:bg-gemini-hover rounded-full text-gemini-muted hover:text-red-400 transition" title="Clear Current Chat">
+          <i class="ph ph-trash text-lg"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Chat Messages Container -->
+    <div id="chat-scroller" class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+      <div id="chat-container" class="max-w-3xl mx-auto space-y-6">
+        <!-- Messages will render dynamically here -->
+      </div>
+    </div>
+
+    <!-- Chat Input Area (Gemini Style floating pill/bar) -->
+    <div class="p-4 bg-gemini-bg shrink-0">
+      <div class="max-w-3xl mx-auto relative">
+        <div class="bg-gemini-surface border border-gemini-border rounded-2xl shadow-lg focus-within:border-gemini-accent/60 transition-all flex flex-col px-4 py-3">
+          <textarea
+            id="chat-input"
+            rows="1"
+            placeholder="Ask anything..."
+            class="w-full bg-transparent resize-none border-none outline-none text-gemini-text placeholder-gemini-muted text-sm leading-relaxed max-h-48 overflow-y-auto"
+          ></textarea>
+          <div class="flex items-center justify-between mt-2 pt-1 border-t border-gemini-border/40">
+            <span class="text-[11px] text-gemini-muted flex items-center gap-1">
+              <i class="ph ph-info"></i> Powered by OpenRouter API
+            </span>
+            <div class="flex items-center gap-2">
+              <button id="send-btn" class="w-8 h-8 rounded-full bg-gemini-accent hover:opacity-90 flex items-center justify-center text-slate-900 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
+                <i class="ph-bold ph-paper-plane-right text-sm"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        <p class="text-[11px] text-center text-gemini-muted mt-2">
+          Universal Gemini may display inaccurate info. Check critical information.
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Settings Modal (OpenRouter API & Model Settings) -->
+  <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
+    <div class="bg-gemini-surface border border-gemini-border rounded-xl w-full max-w-md p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+      <div class="flex items-center justify-between border-b border-gemini-border pb-3">
+        <div class="flex items-center gap-2">
+          <i class="ph ph-sliders text-xl text-gemini-accent"></i>
+          <h2 class="text-base font-semibold text-white">Interface Configuration</h2>
+        </div>
+        <button id="close-settings-btn" class="text-gemini-muted hover:text-white p-1 rounded-md transition">
+          <i class="ph ph-x text-lg"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4 text-sm">
+        <div>
+          <label class="block text-xs font-medium text-gemini-muted mb-1.5" for="input-api-key">OpenRouter API Key</label>
+          <input
+            type="password"
+            id="input-api-key"
+            placeholder="sk-or-v1-..."
+            class="w-full bg-[#141416] border border-gemini-border rounded-lg px-3 py-2 text-gemini-text text-sm focus:outline-none focus:border-gemini-accent"
+          />
+          <p class="text-[11px] text-gemini-muted mt-1">Keys are stored exclusively in your browser's LocalStorage.</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gemini-muted mb-1.5" for="input-model">Custom Model Name</label>
+          <input
+            type="text"
+            id="input-model"
+            placeholder="e.g. google/gemini-2.0-flash-exp:free"
+            class="w-full bg-[#141416] border border-gemini-border rounded-lg px-3 py-2 text-gemini-text text-sm focus:outline-none focus:border-gemini-accent"
+          />
+          <p class="text-[11px] text-gemini-muted mt-1">Accepts any valid model identifier on OpenRouter.</p>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-gemini-border">
+        <button id="cancel-settings-btn" class="px-4 py-2 rounded-lg text-xs font-medium text-gemini-muted hover:text-white hover:bg-gemini-hover transition">
+          Cancel
+        </button>
+        <button id="save-settings-btn" class="px-4 py-2 rounded-lg text-xs font-medium bg-gemini-accent text-slate-900 font-semibold hover:opacity-90 transition">
+          Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts placed at the end of body to prevent blank page & blocking errors -->
+  <script>
+    // --- Initial State and LocalStorage Keys ---
+    const STORAGE_KEY_SESSIONS = 'gemini_chat_sessions';
+    const STORAGE_KEY_ACTIVE_ID = 'gemini_active_chat_id';
+    const STORAGE_KEY_API_KEY = 'gemini_openrouter_api_key';
+    const STORAGE_KEY_MODEL = 'gemini_openrouter_model';
+
+    const DEFAULT_MODEL = 'google/gemini-2.0-flash-exp:free';
+
+    let apiKey = localStorage.getItem(STORAGE_KEY_API_KEY) || '';
+    let currentModel = localStorage.getItem(STORAGE_KEY_MODEL) || DEFAULT_MODEL;
+    let sessions = JSON.parse(localStorage.getItem(STORAGE_KEY_SESSIONS) || '[]');
+    let currentSessionId = localStorage.getItem(STORAGE_KEY_ACTIVE_ID) || null;
+    let isGenerating = false;
+    let abortController = null;
+
+    // --- DOM Elements ---
+    const sidebar = document.getElementById('sidebar');
+    const collapseSidebarBtn = document.getElementById('collapse-sidebar-btn');
+    const expandSidebarBtn = document.getElementById('expand-sidebar-btn');
+    const newChatBtn = document.getElementById('new-chat-btn');
+    const clearChatBtn = document.getElementById('clear-chat-btn');
+    const chatList = document.getElementById('chat-list');
+    const chatContainer = document.getElementById('chat-container');
+    const chatScroller = document.getElementById('chat-scroller');
+    const chatInput = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-btn');
+    const activeModelTag = document.getElementById('active-model-tag');
+
+    // Settings Modal Elements
+    const settingsModal = document.getElementById('settings-modal');
+    const openSettingsBtn = document.getElementById('open-settings-btn');
+    const closeSettingsBtn = document.getElementById('close-settings-btn');
+    const cancelSettingsBtn = document.getElementById('cancel-settings-btn');
+    const saveSettingsBtn = document.getElementById('save-settings-btn');
+    const inputApiKey = document.getElementById('input-api-key');
+    const inputModel = document.getElementById('input-model');
+
+    // --- Marked Config for Code Highlighting ---
+    marked.setOptions({
+      highlight: function(code, lang) {
+        if (lang && hljs.getLanguage(lang)) {
+          try {
+            return hljs.highlight(code, { language: lang }).value;
+          } catch (_) {}
+        }
+        return hljs.highlightAuto(code).value;
+      },
+      breaks: true
+    });
+
+    // --- Setup & Initialization ---
+    function init() {
+      activeModelTag.textContent = currentModel;
+      
+      if (!sessions || sessions.length === 0) {
+        createNewSession();
+      } else if (!currentSessionId || !sessions.find(s => s.id === currentSessionId)) {
+        currentSessionId = sessions[0].id;
+        saveSessions();
+      }
+
+      renderSidebar();
+      renderCurrentChat();
+      setupEventListeners();
+    }
+
+    function setupEventListeners() {
+      // Auto-grow textarea
+      chatInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+        if (!this.value.trim()) this.style.height = 'auto';
+      });
+
+      // Enter key submits (Shift+Enter for newline)
+      chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          handleSendMessage();
+        }
+      });
+
+      sendBtn.addEventListener('click', handleSendMessage);
+      newChatBtn.addEventListener('click', () => createNewSession());
+      clearChatBtn.addEventListener('click', clearCurrentChat);
+
+      // Sidebar Toggles
+      collapseSidebarBtn.addEventListener('click', () => {
+        sidebar.classList.add('-ml-72');
+        expandSidebarBtn.classList.remove('hidden');
+      });
+      expandSidebarBtn.addEventListener('click', () => {
+        sidebar.classList.remove('-ml-72');
+        expandSidebarBtn.classList.add('hidden');
+      });
+
+      // Settings Modal Open/Close
+      openSettingsBtn.addEventListener('click', () => {
+        inputApiKey.value = apiKey;
+        inputModel.value = currentModel;
+        settingsModal.classList.remove('hidden');
+      });
+
+      const closeModal = () => settingsModal.classList.add('hidden');
+      closeSettingsBtn.addEventListener('click', closeModal);
+      cancelSettingsBtn.addEventListener('click', closeModal);
+
+      saveSettingsBtn.addEventListener('click', () => {
+        apiKey = inputApiKey.value.trim();
+        currentModel = inputModel.value.trim() || DEFAULT_MODEL;
+
+        localStorage.setItem(STORAGE_KEY_API_KEY, apiKey);
+        localStorage.setItem(STORAGE_KEY_MODEL, currentModel);
+
+        activeModelTag.textContent = currentModel;
+        closeModal();
+      });
+    }
+
+    // --- Session & Storage Management ---
+    function saveSessions() {
+      localStorage.setItem(STORAGE_KEY_SESSIONS, JSON.stringify(sessions));
+      localStorage.setItem(STORAGE_KEY_ACTIVE_ID, currentSessionId);
+    }
+
+    function getCurrentSession() {
+      return sessions.find(s => s.id === currentSessionId);
+    }
+
+    function createNewSession() {
+      const newSession = {
+        id: 'chat_' + Date.now(),
+        title: 'New conversation',
+        messages: []
+      };
+      sessions.unshift(newSession);
+      currentSessionId = newSession.id;
+      saveSessions();
+      renderSidebar();
+      renderCurrentChat();
+      chatInput.focus();
+    }
+
+    function selectSession(id) {
+      if (currentSessionId === id) return;
+      currentSessionId = id;
+      saveSessions();
+      renderSidebar();
+      renderCurrentChat();
+    }
+
+    function deleteSession(id, event) {
+      event.stopPropagation();
+      sessions = sessions.filter(s => s.id !== id);
+      if (sessions.length === 0) {
+        createNewSession();
+      } else {
+        if (currentSessionId === id) {
+          currentSessionId = sessions[0].id;
+        }
+        saveSessions();
+        renderSidebar();
+        renderCurrentChat();
+      }
+    }
+
+    function clearCurrentChat() {
+      const session = getCurrentSession();
+      if (!session) return;
+      session.messages = [];
+      session.title = 'New conversation';
+      saveSessions();
+      renderSidebar();
+      renderCurrentChat();
+    }
+
+    // --- Rendering UI ---
+    function renderSidebar() {
+      chatList.innerHTML = '';
+      sessions.forEach(session => {
+        const isActive = session.id === currentSessionId;
+        const btn = document.createElement('div');
+        btn.className = `group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer text-sm font-normal transition duration-150 ${
+          isActive ? 'bg-[#282a2c] text-white font-medium' : 'text-gemini-muted hover:bg-gemini-hover hover:text-gemini-text'
+        }`;
+        btn.onclick = () => selectSession(session.id);
+
+        btn.innerHTML = `
+          <div class="flex items-center gap-2.5 truncate flex-1 pr-2">
+            <i class="ph ph-chat-teardrop text-base shrink-0"></i>
+            <span class="truncate text-xs">${escapeHTML(session.title)}</span>
+          </div>
+          <button class="opacity-0 group-hover:opacity-100 hover:text-red-400 p-1 rounded transition shrink-0" title="Delete conversation">
+            <i class="ph ph-trash text-sm"></i>
+          </button>
+        `;
+
+        btn.querySelector('button').onclick = (e) => deleteSession(session.id, e);
+        chatList.appendChild(btn);
+      });
+    }
+
+    function renderCurrentChat() {
+      chatContainer.innerHTML = '';
+      const session = getCurrentSession();
+      if (!session || session.messages.length === 0) {
+        renderWelcomeGreeting();
+        return;
+      }
+
+      session.messages.forEach(msg => {
+        appendMessageUI(msg.role, msg.content);
+      });
+
+      chatScroller.scrollTop = chatScroller.scrollHeight;
+    }
+
+    function renderWelcomeGreeting() {
+      chatContainer.innerHTML = `
+        <div class="min-h-[50vh] flex flex-col items-center justify-center text-center space-y-4 px-4">
+          <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-400 flex items-center justify-center shadow-lg shadow-blue-500/10">
+            <i class="ph-bold ph-sparkle text-2xl text-white"></i>
+          </div>
+          <div>
+            <h1 class="text-2xl font-medium bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">
+              Hello there
+            </h1>
+            <p class="text-sm text-gemini-muted mt-1">How can I help you today?</p>
+          </div>
+        </div>
+      `;
+    }
+
+    function appendMessageUI(role, content = '') {
+      const isUser = role === 'user';
+      const wrapper = document.createElement('div');
+      wrapper.className = `flex gap-4 items-start ${isUser ? 'justify-end' : 'justify-start'}`;
+
+      if (isUser) {
+        wrapper.innerHTML = `
+          <div class="max-w-[85%] md:max-w-[75%] bg-gemini-userBubble text-gemini-text text-sm rounded-2xl rounded-tr-sm px-4 py-3 leading-relaxed border border-gemini-border/50">
+            ${escapeHTML(content).replace(/\n/g, '<br>')}
+          </div>
+        `;
+      } else {
+        wrapper.innerHTML = `
+          <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 shrink-0 flex items-center justify-center text-white text-xs mt-1">
+            <i class="ph-fill ph-sparkle"></i>
+          </div>
+          <div class="flex-1 overfl
