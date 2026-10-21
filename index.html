@@ -1,3 +1,5 @@
+HTML
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -463,4 +465,30 @@ async function sendMessage(text) {
     }
   } catch (err) {
     $("pending")?.remove();
-    if (err.name === "Abo
+    if (err.name === "Escape") {
+    closeSettings();
+    closeSidebar();
+  }
+});
+
+// Initialize safely.
+try {
+  apiKey = read(KEY, "");
+  model = read(MODEL, DEFAULT_MODEL) || DEFAULT_MODEL;
+  const stored = JSON.parse(read(CHATS, "[]"));
+  chats = Array.isArray(stored) ? stored.filter(c =>
+    c && typeof c.id === "string" && Array.isArray(c.messages)
+  ) : [];
+  activeId = read(ACTIVE, null);
+  if (!chats.some(c => c.id === activeId)) activeId = chats[0]?.id || null;
+} catch (e) {
+  chats = [];
+  activeId = null;
+}
+$("modelBadge").textContent = model;
+renderHistory();
+renderConversation();
+updateSend();
+</script>
+</body>
+</html>
