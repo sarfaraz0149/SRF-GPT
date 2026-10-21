@@ -2,8 +2,8 @@
 <html lang="en" class="h-full">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SRF-GPT - AI Assistant</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SRF-GPT</title>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -16,11 +16,11 @@
             gemini: {
               bg: '#131314',
               surface: '#1e1f20',
-              sidebar: '#1a1a1c',
-              hover: '#282a2c',
+              sidebar: '#18191a',
+              hover: '#2a2b2e',
               border: '#333537',
               text: '#e3e3e3',
-              muted: '#8e918f',
+              muted: '#9aa0a6',
               accent: '#a8c7fa',
               userBubble: '#2b2c2f'
             }
@@ -39,253 +39,220 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 
   <style>
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.15);
-      border-radius: 9999px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(255, 255, 255, 0.25);
-    }
+    /* Mobile-friendly scrolling */
+    * { -webkit-tap-highlight-color: transparent; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 9999px; }
 
     /* Markdown Styling */
     .prose-custom {
       color: #e3e3e3;
-      font-size: 0.965rem;
-      line-height: 1.7;
+      font-size: 0.95rem;
+      line-height: 1.65;
       word-break: break-word;
     }
-    .prose-custom p { margin-bottom: 0.85rem; }
+    .prose-custom p { margin-bottom: 0.75rem; }
     .prose-custom p:last-child { margin-bottom: 0; }
-    .prose-custom h1, .prose-custom h2, .prose-custom h3 {
-      font-weight: 600;
-      color: #fff;
-      margin-top: 1.25rem;
-      margin-bottom: 0.5rem;
-    }
-    .prose-custom ul, .prose-custom ol {
-      margin-left: 1.4rem;
-      margin-bottom: 0.85rem;
-    }
-    .prose-custom ul { list-style-type: disc; }
-    .prose-custom ol { list-style-type: decimal; }
     .prose-custom code:not(pre code) {
-      background: rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.1);
       padding: 0.15rem 0.35rem;
       border-radius: 0.25rem;
-      font-size: 0.875em;
       color: #a8c7fa;
+      font-size: 0.85em;
     }
     .prose-custom pre {
       background: #0d0d0e !important;
       border: 1px solid #2e2f33;
-      border-radius: 0.65rem;
-      padding: 1rem;
-      margin: 0.85rem 0;
+      border-radius: 0.5rem;
+      padding: 0.85rem;
+      margin: 0.75rem 0;
       overflow-x: auto;
     }
-    .prose-custom pre code {
-      background: transparent !important;
-      padding: 0;
-      font-size: 0.85rem;
-    }
-    .prose-custom blockquote {
-      border-left: 3px solid #a8c7fa;
-      padding-left: 0.85rem;
-      color: #a0a0a0;
-      margin: 0.85rem 0;
-    }
-    .prose-custom a {
-      color: #a8c7fa;
-      text-decoration: underline;
-    }
-
-    /* Pulse cursor for streaming */
     .streaming-cursor::after {
       content: '▋';
       display: inline-block;
-      vertical-align: baseline;
       animation: blink 1s infinite;
       color: #a8c7fa;
       margin-left: 2px;
     }
-    @keyframes blink {
-      0%, 50% { opacity: 1; }
-      51%, 100% { opacity: 0; }
-    }
+    @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
   </style>
 </head>
-<body class="bg-gemini-bg text-gemini-text h-full flex overflow-hidden font-sans antialiased selection:bg-[#384358] selection:text-white">
+<body class="bg-gemini-bg text-gemini-text h-full flex flex-col font-sans overflow-hidden select-none">
 
-  <!-- Left Sidebar (Collapsible History) -->
-  <aside id="sidebar" class="w-72 bg-gemini-sidebar border-r border-gemini-border flex flex-col transition-all duration-300 ease-in-out shrink-0 z-20">
-    <!-- Sidebar Header -->
-    <div class="p-4 flex items-center justify-between">
-      <button id="new-chat-btn" class="flex-1 flex items-center gap-3 px-3.5 py-2.5 bg-[#232427] hover:bg-gemini-hover border border-gemini-border rounded-full text-sm font-medium transition duration-200">
-        <i class="ph ph-plus text-base text-gemini-accent"></i>
-        <span>New chat</span>
-      </button>
-      <button id="collapse-sidebar-btn" class="ml-2 p-2 hover:bg-gemini-hover rounded-full text-gemini-muted hover:text-white transition" title="Collapse Menu">
-        <i class="ph ph-sidebar-simple text-xl"></i>
-      </button>
-    </div>
+  <!-- Mobile Backdrop Overlay -->
+  <div id="sidebar-backdrop" class="fixed inset-0 bg-black/60 z-30 hidden md:hidden transition-opacity"></div>
 
-    <!-- Conversations List -->
-    <div class="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gemini-muted">Recent</div>
-    <div id="chat-list" class="flex-1 overflow-y-auto px-2 space-y-1">
-      <!-- Chat history items render dynamically here -->
-    </div>
+  <!-- Main Viewport -->
+  <div class="flex h-full w-full relative overflow-hidden">
 
-    <!-- Sidebar Bottom: Creator Attribution & Settings Button -->
-    <div class="p-3 border-t border-gemini-border space-y-2">
-      <div class="px-3 py-1.5 flex items-center gap-2 text-xs text-gemini-muted">
-        <i class="ph-fill ph-code text-gemini-accent text-sm"></i>
-        <span>Built by <strong class="text-gray-200 font-medium">Shaik Sarfaraz</strong></span>
-      </div>
-      <button id="open-settings-btn" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gemini-hover text-sm text-gemini-muted hover:text-white transition">
-        <i class="ph ph-gear text-lg"></i>
-        <span>Settings & API Key</span>
-      </button>
-    </div>
-  </aside>
-
-  <!-- Main Chat Section -->
-  <main class="flex-1 flex flex-col h-full relative overflow-hidden bg-gemini-bg">
-    <!-- Top Navigation Bar -->
-    <header class="h-14 border-b border-gemini-border/60 flex items-center justify-between px-4 bg-gemini-bg/80 backdrop-blur z-10 shrink-0">
-      <div class="flex items-center gap-3">
-        <button id="expand-sidebar-btn" class="p-2 hover:bg-gemini-hover rounded-full text-gemini-muted hover:text-white hidden transition" title="Expand Menu">
-          <i class="ph ph-sidebar-simple text-xl"></i>
+    <!-- Responsive Sidebar (Drawer on mobile, collapsible on desktop) -->
+    <aside id="sidebar" class="fixed md:static inset-y-0 left-0 z-40 w-72 bg-gemini-sidebar border-r border-gemini-border flex flex-col -translate-x-full md:translate-x-0 transition-transform duration-200 ease-in-out shrink-0">
+      
+      <!-- Top Actions -->
+      <div class="p-3 flex items-center gap-2">
+        <button id="new-chat-btn" class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-[#232427] hover:bg-gemini-hover active:scale-95 border border-gemini-border rounded-full text-sm font-medium transition cursor-pointer">
+          <i class="ph-bold ph-plus text-gemini-accent"></i>
+          <span>New Chat</span>
         </button>
-        <div class="flex items-center gap-2">
-          <span class="text-lg font-semibold bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">SRF-GPT</span>
-          <span id="active-model-tag" class="text-xs px-2 py-0.5 rounded-full bg-gemini-surface border border-gemini-border text-gemini-muted"></span>
+        <button id="close-sidebar-btn" class="md:hidden p-2.5 text-gemini-muted hover:text-white rounded-lg active:bg-gemini-hover">
+          <i class="ph ph-x text-xl"></i>
+        </button>
+      </div>
+
+      <!-- History Header -->
+      <div class="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-gemini-muted">Recent Conversations</div>
+      
+      <!-- History List -->
+      <div id="chat-list" class="flex-1 overflow-y-auto px-2 space-y-1 select-text">
+        <!-- Rendered chats -->
+      </div>
+
+      <!-- Sidebar Footer (Creator attribution & Settings) -->
+      <div class="p-3 border-t border-gemini-border space-y-2 bg-gemini-sidebar">
+        <div class="px-3 py-1 flex items-center gap-2 text-xs text-gemini-muted">
+          <i class="ph-fill ph-code text-gemini-accent"></i>
+          <span>Built by <strong class="text-white font-medium">Shaik Sarfaraz</strong></span>
+        </div>
+        <button id="open-settings-btn" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gemini-hover active:bg-gemini-hover text-sm text-gemini-muted hover:text-white transition cursor-pointer">
+          <i class="ph ph-gear text-lg text-gemini-accent"></i>
+          <span>Settings & API Key</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col h-full w-full min-w-0 bg-gemini-bg overflow-hidden relative">
+
+      <!-- Top Header Navigation -->
+      <header class="h-14 border-b border-gemini-border/60 flex items-center justify-between px-3 md:px-5 shrink-0 bg-gemini-bg/95 backdrop-blur z-10">
+        <div class="flex items-center gap-3">
+          <button id="toggle-sidebar-btn" class="p-2 -ml-1 text-gemini-muted hover:text-white rounded-lg active:bg-gemini-hover" title="Open Menu">
+            <i class="ph ph-list text-2xl"></i>
+          </button>
+          <div class="flex items-center gap-2">
+            <span class="text-base md:text-lg font-bold bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">SRF-GPT</span>
+            <span id="active-model-tag" class="hidden sm:inline-block text-[11px] px-2 py-0.5 rounded-full bg-gemini-surface border border-gemini-border text-gemini-muted max-w-[150px] truncate"></span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1">
+          <button id="quick-settings-btn" class="p-2 text-gemini-muted hover:text-white rounded-lg active:bg-gemini-hover" title="Settings">
+            <i class="ph ph-sliders text-xl"></i>
+          </button>
+          <button id="clear-chat-btn" class="p-2 text-gemini-muted hover:text-red-400 rounded-lg active:bg-gemini-hover" title="Clear Chat">
+            <i class="ph ph-trash text-xl"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Alert Notification Banner -->
+      <div id="alert-banner" class="hidden bg-red-950/80 border-b border-red-800 text-red-200 px-4 py-2 text-xs flex items-center justify-between z-10">
+        <span id="alert-message">Notice message</span>
+        <button onclick="document.getElementById('alert-banner').classList.add('hidden')" class="p-1 hover:text-white">✕</button>
+      </div>
+
+      <!-- Messages Scroller Area -->
+      <div id="chat-scroller" class="flex-1 overflow-y-auto px-4 py-4 md:py-6 select-text">
+        <div id="chat-container" class="max-w-2xl mx-auto space-y-5">
+          <!-- Dynamic messages will render here -->
         </div>
       </div>
-      <div class="flex items-center gap-2">
-        <button id="clear-chat-btn" class="p-2 hover:bg-gemini-hover rounded-full text-gemini-muted hover:text-red-400 transition" title="Clear Current Chat">
-          <i class="ph ph-trash text-lg"></i>
-        </button>
-      </div>
-    </header>
 
-    <!-- Chat Messages Container -->
-    <div id="chat-scroller" class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-      <div id="chat-container" class="max-w-3xl mx-auto space-y-6">
-        <!-- Messages will render dynamically here -->
-      </div>
-    </div>
-
-    <!-- Chat Input Area -->
-    <div class="p-4 bg-gemini-bg shrink-0">
-      <div class="max-w-3xl mx-auto relative">
-        <div class="bg-gemini-surface border border-gemini-border rounded-2xl shadow-lg focus-within:border-gemini-accent/60 transition-all flex flex-col px-4 py-3">
-          <textarea
-            id="chat-input"
-            rows="1"
-            placeholder="Ask SRF-GPT anything..."
-            class="w-full bg-transparent resize-none border-none outline-none text-gemini-text placeholder-gemini-muted text-sm leading-relaxed max-h-48 overflow-y-auto"
-          ></textarea>
-          <div class="flex items-center justify-between mt-2 pt-1 border-t border-gemini-border/40">
-            <span class="text-[11px] text-gemini-muted flex items-center gap-1">
-              <i class="ph ph-user"></i> Created by Shaik Sarfaraz
-            </span>
-            <div class="flex items-center gap-2">
-              <button id="send-btn" class="w-8 h-8 rounded-full bg-gemini-accent hover:opacity-90 flex items-center justify-center text-slate-900 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
-                <i class="ph-bold ph-paper-plane-right text-sm"></i>
+      <!-- Chat Bottom Input Bar -->
+      <div class="p-3 md:p-4 bg-gemini-bg shrink-0">
+        <div class="max-w-2xl mx-auto">
+          <div class="bg-gemini-surface border border-gemini-border rounded-2xl p-2.5 flex flex-col focus-within:border-gemini-accent transition shadow-lg">
+            <textarea
+              id="chat-input"
+              rows="1"
+              placeholder="Ask SRF-GPT..."
+              class="w-full bg-transparent resize-none border-none outline-none text-gemini-text placeholder-gemini-muted text-sm px-2 py-1 max-h-36 overflow-y-auto select-text"
+            ></textarea>
+            <div class="flex items-center justify-between pt-2 px-1 border-t border-gemini-border/40 mt-1">
+              <span class="text-[10px] text-gemini-muted flex items-center gap-1">
+                <i class="ph ph-sparkle text-gemini-accent"></i> By Shaik Sarfaraz
+              </span>
+              <button id="send-btn" class="w-8 h-8 rounded-full bg-gemini-accent text-slate-950 flex items-center justify-center active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                <i class="ph-bold ph-arrow-up text-base"></i>
               </button>
             </div>
           </div>
+          <div class="text-[10px] text-center text-gemini-muted mt-1.5">
+            SRF-GPT can make mistakes. Verify important information.
+          </div>
         </div>
-        <p class="text-[11px] text-center text-gemini-muted mt-2">
-          SRF-GPT may display inaccurate info. Check critical information.
-        </p>
       </div>
-    </div>
-  </main>
 
-  <!-- Settings Modal (OpenRouter API & Model Settings) -->
-  <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
-    <div class="bg-gemini-surface border border-gemini-border rounded-xl w-full max-w-md p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+    </main>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 hidden">
+    <div class="bg-gemini-surface border border-gemini-border rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
       <div class="flex items-center justify-between border-b border-gemini-border pb-3">
-        <div class="flex items-center gap-2">
-          <i class="ph ph-sliders text-xl text-gemini-accent"></i>
-          <h2 class="text-base font-semibold text-white">SRF-GPT Configuration</h2>
-        </div>
-        <button id="close-settings-btn" class="text-gemini-muted hover:text-white p-1 rounded-md transition">
+        <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+          <i class="ph ph-sliders text-gemini-accent text-lg"></i>
+          Settings
+        </h3>
+        <button id="close-settings-modal-btn" class="text-gemini-muted hover:text-white p-1">
           <i class="ph ph-x text-lg"></i>
         </button>
       </div>
 
-      <div class="space-y-4 text-sm">
+      <div class="space-y-3 text-xs">
         <div>
-          <label class="block text-xs font-medium text-gemini-muted mb-1.5" for="input-api-key">OpenRouter API Key</label>
+          <label class="block font-medium text-gemini-muted mb-1" for="input-api-key">OpenRouter API Key</label>
           <input
             type="password"
             id="input-api-key"
             placeholder="sk-or-v1-..."
-            class="w-full bg-[#141416] border border-gemini-border rounded-lg px-3 py-2 text-gemini-text text-sm focus:outline-none focus:border-gemini-accent"
+            class="w-full bg-[#121213] border border-gemini-border rounded-lg px-3 py-2 text-white focus:outline-none focus:border-gemini-accent text-xs"
           />
-          <p class="text-[11px] text-gemini-muted mt-1">Keys are stored exclusively in your browser's LocalStorage.</p>
         </div>
-
         <div>
-          <label class="block text-xs font-medium text-gemini-muted mb-1.5" for="input-model">Custom Model Name</label>
+          <label class="block font-medium text-gemini-muted mb-1" for="input-model">Model ID</label>
           <input
             type="text"
             id="input-model"
-            placeholder="e.g. google/gemini-2.0-flash-exp:free"
-            class="w-full bg-[#141416] border border-gemini-border rounded-lg px-3 py-2 text-gemini-text text-sm focus:outline-none focus:border-gemini-accent"
+            placeholder="google/gemini-2.0-flash-exp:free"
+            class="w-full bg-[#121213] border border-gemini-border rounded-lg px-3 py-2 text-white focus:outline-none focus:border-gemini-accent text-xs"
           />
-          <p class="text-[11px] text-gemini-muted mt-1">Accepts any valid model identifier on OpenRouter.</p>
         </div>
       </div>
 
       <div class="flex justify-end gap-2 pt-2 border-t border-gemini-border">
-        <button id="cancel-settings-btn" class="px-4 py-2 rounded-lg text-xs font-medium text-gemini-muted hover:text-white hover:bg-gemini-hover transition">
-          Cancel
-        </button>
-        <button id="save-settings-btn" class="px-4 py-2 rounded-lg text-xs font-medium bg-gemini-accent text-slate-900 font-semibold hover:opacity-90 transition">
-          Save Changes
-        </button>
+        <button id="cancel-settings-btn" class="px-3 py-1.5 rounded-lg text-xs text-gemini-muted hover:text-white">Cancel</button>
+        <button id="save-settings-btn" class="px-4 py-1.5 rounded-lg text-xs bg-gemini-accent text-slate-950 font-semibold active:scale-95 transition">Save</button>
       </div>
     </div>
   </div>
 
-  <!-- Scripts placed at the end of body to prevent blank page & blocking errors -->
+  <!-- JavaScript logic placed at the end to guarantee full DOM loading -->
   <script>
-    // System instruction asserting creator identity
     const SYSTEM_PROMPT = {
       role: 'system',
-      content: 'You are SRF-GPT, a powerful AI assistant created and developed by Shaik Sarfaraz. If the user asks who made you, who created you, or about your origins, always state clearly that you were created by Shaik Sarfaraz.'
+      content: 'You are SRF-GPT, an advanced AI system created and built by Shaik Sarfaraz. If the user asks about your creator, identity, or origins, clearly state that you were created by Shaik Sarfaraz.'
     };
 
-    // --- Initial State and LocalStorage Keys ---
-    const STORAGE_KEY_SESSIONS = 'srfgpt_chat_sessions';
-    const STORAGE_KEY_ACTIVE_ID = 'srfgpt_active_chat_id';
-    const STORAGE_KEY_API_KEY = 'srfgpt_openrouter_api_key';
-    const STORAGE_KEY_MODEL = 'srfgpt_openrouter_model';
-
     const DEFAULT_MODEL = 'google/gemini-2.0-flash-exp:free';
+    const KEY_API = 'srfgpt_api_key';
+    const KEY_MODEL = 'srfgpt_model';
+    const KEY_SESSIONS = 'srfgpt_sessions_v2';
+    const KEY_ACTIVE_ID = 'srfgpt_active_id_v2';
 
-    let apiKey = localStorage.getItem(STORAGE_KEY_API_KEY) || '';
-    let currentModel = localStorage.getItem(STORAGE_KEY_MODEL) || DEFAULT_MODEL;
-    let sessions = JSON.parse(localStorage.getItem(STORAGE_KEY_SESSIONS) || '[]');
-    let currentSessionId = localStorage.getItem(STORAGE_KEY_ACTIVE_ID) || null;
+    let apiKey = localStorage.getItem(KEY_API) || '';
+    let currentModel = localStorage.getItem(KEY_MODEL) || DEFAULT_MODEL;
+    let sessions = JSON.parse(localStorage.getItem(KEY_SESSIONS) || '[]');
+    let currentSessionId = localStorage.getItem(KEY_ACTIVE_ID) || null;
     let isGenerating = false;
     let abortController = null;
 
-    // --- DOM Elements ---
+    // Elements
     const sidebar = document.getElementById('sidebar');
-    const collapseSidebarBtn = document.getElementById('collapse-sidebar-btn');
-    const expandSidebarBtn = document.getElementById('expand-sidebar-btn');
+    const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+    const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
+    const closeSidebarBtn = document.getElementById('close-sidebar-btn');
     const newChatBtn = document.getElementById('new-chat-btn');
     const clearChatBtn = document.getElementById('clear-chat-btn');
     const chatList = document.getElementById('chat-list');
@@ -294,50 +261,79 @@
     const chatInput = document.getElementById('chat-input');
     const sendBtn = document.getElementById('send-btn');
     const activeModelTag = document.getElementById('active-model-tag');
+    const alertBanner = document.getElementById('alert-banner');
+    const alertMessage = document.getElementById('alert-message');
 
-    // Settings Modal Elements
+    // Settings Modal
     const settingsModal = document.getElementById('settings-modal');
     const openSettingsBtn = document.getElementById('open-settings-btn');
-    const closeSettingsBtn = document.getElementById('close-settings-btn');
+    const quickSettingsBtn = document.getElementById('quick-settings-btn');
+    const closeSettingsModalBtn = document.getElementById('close-settings-modal-btn');
     const cancelSettingsBtn = document.getElementById('cancel-settings-btn');
     const saveSettingsBtn = document.getElementById('save-settings-btn');
     const inputApiKey = document.getElementById('input-api-key');
     const inputModel = document.getElementById('input-model');
 
-    // --- Marked Config for Code Highlighting ---
     marked.setOptions({
       highlight: function(code, lang) {
         if (lang && hljs.getLanguage(lang)) {
-          try {
-            return hljs.highlight(code, { language: lang }).value;
-          } catch (_) {}
+          try { return hljs.highlight(code, { language: lang }).value; } catch (_) {}
         }
         return hljs.highlightAuto(code).value;
       },
       breaks: true
     });
 
-    // --- Setup & Initialization ---
+    function showAlert(msg) {
+      alertMessage.textContent = msg;
+      alertBanner.classList.remove('hidden');
+    }
+
     function init() {
       activeModelTag.textContent = currentModel;
-      
+
       if (!sessions || sessions.length === 0) {
         createNewSession();
       } else if (!currentSessionId || !sessions.find(s => s.id === currentSessionId)) {
         currentSessionId = sessions[0].id;
-        saveSessions();
+        saveState();
       }
 
       renderSidebar();
-      renderCurrentChat();
-      setupEventListeners();
+      renderChat();
+      setupEvents();
+
+      if (!apiKey) {
+        showAlert('Please set your OpenRouter API Key in Settings to start chatting.');
+      }
     }
 
-    function setupEventListeners() {
+    function setupEvents() {
+      // Sidebar Toggle Logic for Mobile & Desktop
+      function openSidebar() {
+        sidebar.classList.remove('-translate-x-full');
+        sidebarBackdrop.classList.remove('hidden');
+      }
+      function closeSidebar() {
+        sidebar.classList.add('-translate-x-full');
+        sidebarBackdrop.classList.add('hidden');
+      }
+
+      toggleSidebarBtn.onclick = () => {
+        if (sidebar.classList.contains('-translate-x-full')) {
+          openSidebar();
+        } else {
+          closeSidebar();
+        }
+      };
+
+      closeSidebarBtn.onclick = closeSidebar;
+      sidebarBackdrop.onclick = closeSidebar;
+
+      // Auto resize input
       chatInput.addEventListener('input', function() {
         this.style.height = 'auto';
-        this.style.height = (this.scrollHeight) + 'px';
-        if (!this.value.trim()) this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
       });
 
       chatInput.addEventListener('keydown', (e) => {
@@ -347,45 +343,41 @@
         }
       });
 
-      sendBtn.addEventListener('click', handleSendMessage);
-      newChatBtn.addEventListener('click', () => createNewSession());
-      clearChatBtn.addEventListener('click', clearCurrentChat);
+      sendBtn.onclick = handleSendMessage;
+      newChatBtn.onclick = () => {
+        createNewSession();
+        closeSidebar();
+      };
+      clearChatBtn.onclick = clearCurrentChat;
 
-      collapseSidebarBtn.addEventListener('click', () => {
-        sidebar.classList.add('-ml-72');
-        expandSidebarBtn.classList.remove('hidden');
-      });
-      expandSidebarBtn.addEventListener('click', () => {
-        sidebar.classList.remove('-ml-72');
-        expandSidebarBtn.classList.add('hidden');
-      });
-
-      openSettingsBtn.addEventListener('click', () => {
+      // Settings modal toggles
+      const showSettings = () => {
         inputApiKey.value = apiKey;
         inputModel.value = currentModel;
         settingsModal.classList.remove('hidden');
-      });
+        closeSidebar();
+      };
+      const hideSettings = () => settingsModal.classList.add('hidden');
 
-      const closeModal = () => settingsModal.classList.add('hidden');
-      closeSettingsBtn.addEventListener('click', closeModal);
-      cancelSettingsBtn.addEventListener('click', closeModal);
+      openSettingsBtn.onclick = showSettings;
+      quickSettingsBtn.onclick = showSettings;
+      closeSettingsModalBtn.onclick = hideSettings;
+      cancelSettingsBtn.onclick = hideSettings;
 
-      saveSettingsBtn.addEventListener('click', () => {
+      saveSettingsBtn.onclick = () => {
         apiKey = inputApiKey.value.trim();
         currentModel = inputModel.value.trim() || DEFAULT_MODEL;
-
-        localStorage.setItem(STORAGE_KEY_API_KEY, apiKey);
-        localStorage.setItem(STORAGE_KEY_MODEL, currentModel);
-
+        localStorage.setItem(KEY_API, apiKey);
+        localStorage.setItem(KEY_MODEL, currentModel);
         activeModelTag.textContent = currentModel;
-        closeModal();
-      });
+        hideSettings();
+        if (apiKey) alertBanner.classList.add('hidden');
+      };
     }
 
-    // --- Session & Storage Management ---
-    function saveSessions() {
-      localStorage.setItem(STORAGE_KEY_SESSIONS, JSON.stringify(sessions));
-      localStorage.setItem(STORAGE_KEY_ACTIVE_ID, currentSessionId);
+    function saveState() {
+      localStorage.setItem(KEY_SESSIONS, JSON.stringify(sessions));
+      localStorage.setItem(KEY_ACTIVE_ID, currentSessionId);
     }
 
     function getCurrentSession() {
@@ -395,112 +387,106 @@
     function createNewSession() {
       const newSession = {
         id: 'chat_' + Date.now(),
-        title: 'New conversation',
+        title: 'New chat',
         messages: []
       };
       sessions.unshift(newSession);
       currentSessionId = newSession.id;
-      saveSessions();
+      saveState();
       renderSidebar();
-      renderCurrentChat();
-      chatInput.focus();
+      renderChat();
     }
 
     function selectSession(id) {
-      if (currentSessionId === id) return;
       currentSessionId = id;
-      saveSessions();
+      saveState();
       renderSidebar();
-      renderCurrentChat();
+      renderChat();
+      if (window.innerWidth < 768) {
+        sidebar.classList.add('-translate-x-full');
+        sidebarBackdrop.classList.add('hidden');
+      }
     }
 
-    function deleteSession(id, event) {
-      event.stopPropagation();
+    function deleteSession(id, e) {
+      e.stopPropagation();
       sessions = sessions.filter(s => s.id !== id);
       if (sessions.length === 0) {
         createNewSession();
       } else {
-        if (currentSessionId === id) {
-          currentSessionId = sessions[0].id;
-        }
-        saveSessions();
+        if (currentSessionId === id) currentSessionId = sessions[0].id;
+        saveState();
         renderSidebar();
-        renderCurrentChat();
+        renderChat();
       }
     }
 
     function clearCurrentChat() {
-      const session = getCurrentSession();
-      if (!session) return;
-      session.messages = [];
-      session.title = 'New conversation';
-      saveSessions();
+      const s = getCurrentSession();
+      if (!s) return;
+      s.messages = [];
+      s.title = 'New chat';
+      saveState();
       renderSidebar();
-      renderCurrentChat();
+      renderChat();
     }
 
-    // --- Rendering UI ---
     function renderSidebar() {
       chatList.innerHTML = '';
       sessions.forEach(session => {
         const isActive = session.id === currentSessionId;
-        const btn = document.createElement('div');
-        btn.className = `group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer text-sm font-normal transition duration-150 ${
-          isActive ? 'bg-[#282a2c] text-white font-medium' : 'text-gemini-muted hover:bg-gemini-hover hover:text-gemini-text'
+        const item = document.createElement('div');
+        item.className = `flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer text-xs transition ${
+          isActive ? 'bg-[#282a2c] text-white font-medium' : 'text-gemini-muted hover:bg-gemini-hover hover:text-white'
         }`;
-        btn.onclick = () => selectSession(session.id);
+        item.onclick = () => selectSession(session.id);
 
-        btn.innerHTML = `
-          <div class="flex items-center gap-2.5 truncate flex-1 pr-2">
-            <i class="ph ph-chat-teardrop text-base shrink-0"></i>
-            <span class="truncate text-xs">${escapeHTML(session.title)}</span>
+        item.innerHTML = `
+          <div class="flex items-center gap-2 truncate flex-1 pr-2">
+            <i class="ph ph-chat-teardrop text-sm shrink-0"></i>
+            <span class="truncate">${escapeHTML(session.title)}</span>
           </div>
-          <button class="opacity-0 group-hover:opacity-100 hover:text-red-400 p-1 rounded transition shrink-0" title="Delete conversation">
+          <button class="text-gemini-muted hover:text-red-400 p-1 rounded" title="Delete">
             <i class="ph ph-trash text-sm"></i>
           </button>
         `;
 
-        btn.querySelector('button').onclick = (e) => deleteSession(session.id, e);
-        chatList.appendChild(btn);
+        item.querySelector('button').onclick = (e) => deleteSession(session.id, e);
+        chatList.appendChild(item);
       });
     }
 
-    function renderCurrentChat() {
+    function renderChat() {
       chatContainer.innerHTML = '';
-      const session = getCurrentSession();
-      if (!session || session.messages.length === 0) {
-        renderWelcomeGreeting();
+      const s = getCurrentSession();
+      if (!s || s.messages.length === 0) {
+        chatContainer.innerHTML = `
+          <div class="py-16 text-center space-y-3">
+            <div class="w-12 h-12 mx-auto rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white shadow-md">
+              <i class="ph-bold ph-sparkle text-2xl"></i>
+            </div>
+            <h2 class="text-xl font-medium bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">SRF-GPT</h2>
+            <p class="text-xs text-gemini-muted max-w-xs mx-auto">Created by <span class="text-white font-medium">Shaik Sarfaraz</span>. What would you like to explore today?</p>
+          </div>
+        `;
         return;
       }
 
-      session.messages.forEach(msg => {
-        appendMessageUI(msg.role, msg.content);
-      });
-
+      s.messages.forEach(msg => appendMessageUI(msg.role, msg.content));
       chatScroller.scrollTop = chatScroller.scrollHeight;
-    }
-
-    function renderWelcomeGreeting() {
-      chatContainer.innerHTML = `
-        <div class="min-h-[50vh] flex flex-col items-center justify-center text-center space-y-4 px-4">
-          <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-400 flex items-center justify-center shadow-lg shadow-blue-500/10">
-            <i class="ph-bold ph-sparkle text-2xl text-white"></i>
-          </div>
-          <div>
-            <h1 class="text-2xl font-medium bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">
-              Hello, I am SRF-GPT
-            </h1>
-            <p class="text-sm text-gemini-muted mt-1">Created by <span class="text-slate-200 font-medium">Shaik Sarfaraz</span>. How can I help you today?</p>
-          </div>
-        </div>
-      `;
     }
 
     function appendMessageUI(role, content = '') {
       const isUser = role === 'user';
       const wrapper = document.createElement('div');
-      wrapper.className = `flex gap-4 items-start ${isUser ? 'justify-end' : 'justify-start'}`;
+      wrapper.className = `flex gap-3 items-start ${isUser ? 'justify-end' : 'justify-start'}`;
 
       if (isUser) {
         wrapper.innerHTML = `
-          <div class="max-w-[85%] md:max-w-[75%] b
+          <div class="max-w-[85%] bg-gemini-userBubble text-white text-sm rounded-2xl rounded-tr-none px-3.5 py-2.5 border border-gemini-border/50">
+            ${escapeHTML(content).replace(/\n/g, '<br>')}
+          </div>
+        `;
+      } else {
+        wrapper.innerHTML = `
+          <div class=
