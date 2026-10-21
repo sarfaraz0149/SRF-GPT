@@ -353,33 +353,32 @@ async function sendMessage(text) {
   controller = new AbortController();
   updateStatus();
 
-  try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+  
+try {
+    const response = await fetch("https://srf-gpt.shaikfaraz060.workers.dev", {
       method: "POST",
       headers: {
-        "Authorization": "Bearer " + apiKey,
-        "Content-Type": "application/json",
-        "HTTP-Referer": location.href,
-        "X-Title": "SRF-GPT"
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: model,
         messages: [
           {role: "system", content: "You are SRF-Bot, the helpful assistant inside SRF-GPT. Be friendly, clear, and useful."},
           ...chat.messages.map(m => ({role: m.role, content: m.content}))
         ]
-      }),
-      signal: controller.signal
-    });
+      })
+    })
 
     const data = await response.json();
+  
+ if (!response.ok) {
+  throw new Error(data?.error?.message || data?.message || "API error " + response.status);
+}
 
-    if (!response.ok) {
-      throw new Error(data?.error?.message || "API error " + response.status);
-    }
-
-    const answer = data?.choices?.[0]?.message?.content;
-    if (!answer) throw new Error("The AI returned an empty response.");
+const answer = data?.reply;
+if (typeof answer !== "string" || !answer.trim()) {
+  throw new Error("The AI returned an empty response.");
+}
+  
 
     const originalChat = chats.find(c => c.id === chatId);
     if (originalChat) {
